@@ -3,7 +3,7 @@
 @AbapCatalog.tableCategory : #TRANSPARENT
 @AbapCatalog.deliveryClass : #A
 @AbapCatalog.dataMaintenance : #RESTRICTED
-define table zdemo_a_travel_d {
+define table zdmo_a_travel_d {
   key client            : abap.clnt not null;
   key travel_uuid       : sysuuid_x16 not null;
   travel_id             : /dmo/travel_id not null;
