@@ -1,7 +1,7 @@
 @EndUserText.label: '''Travel View Entity for Draft Ref.Scen'
 @AccessControl.authorizationCheck: #CHECK
 define root view entity zdmo_I_travel_d
-  as select from zdemo_a_travel_d
+  as select from zdmo_a_travel_d
   composition [0..*] of zdmo_I_booking_d as _Booking
   association [0..1] to /DMO/I_Agency    as _Agency   on $projection.AgencyID = _Agency.AgencyID
 
