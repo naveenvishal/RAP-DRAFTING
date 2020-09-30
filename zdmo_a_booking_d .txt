@@ -1,0 +1,22 @@
+@EndUserText.label : 'Draft Table for Booking'
+@AbapCatalog.enhancementCategory : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table zdmo_a_booking_d {
+  key client            : abap.clnt not null;
+  key booking_uuid      : sysuuid_x16 not null;
+  parent_uuid           : sysuuid_x16;
+  booking_id            : /dmo/booking_id not null;
+  booking_date          : /dmo/booking_date;
+  customer_id           : /dmo/customer_id;
+  carrier_id            : /dmo/carrier_id;
+  connection_id         : /dmo/connection_id;
+  flight_date           : /dmo/flight_date;
+  @Semantics.amount.currencyCode : 'zdmo_a_booking_d.currency_code'
+  flight_price          : /dmo/flight_price;
+  currency_code         : /dmo/currency_code;
+  booking_status        : /dmo/booking_status;
+  local_last_changed_at : timestampl;
+
+}
