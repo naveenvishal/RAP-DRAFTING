@@ -1,4 +1,4 @@
-@EndUserText.label : 'Draft Table for Travel'
+@EndUserText.label : 'Active Travel Persistence for Draft Reference Scenario'
 @AbapCatalog.enhancementCategory : #NOT_EXTENSIBLE
 @AbapCatalog.tableCategory : #TRANSPARENT
 @AbapCatalog.deliveryClass : #A
@@ -11,9 +11,9 @@ define table zdmo_a_travel_d {
   customer_id           : /dmo/customer_id;
   begin_date            : /dmo/begin_date;
   end_date              : /dmo/end_date;
-  @Semantics.amount.currencyCode : 'zdemo_a_travel_d.currency_code'
+  @Semantics.amount.currencyCode : 'zdmo_a_travel_d.currency_code'
   booking_fee           : /dmo/booking_fee;
-  @Semantics.amount.currencyCode : 'zdemo_a_travel_d.currency_code'
+  @Semantics.amount.currencyCode : 'zdmo_a_travel_d.currency_code'
   total_price           : /dmo/total_price;
   currency_code         : /dmo/currency_code;
   description           : /dmo/description;
