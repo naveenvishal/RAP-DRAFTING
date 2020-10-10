@@ -1,0 +1,18 @@
+@EndUserText.label : 'Active BookingSupplement Persistence for Draft Ref. Scenario'
+@AbapCatalog.enhancementCategory : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table zdmo_a_bksuppl_d {
+  key client            : abap.clnt not null;
+  key booksuppl_uuid    : sysuuid_x16 not null;
+  root_uuid             : sysuuid_x16;
+  parent_uuid           : sysuuid_x16;
+  booking_supplement_id : /dmo/booking_supplement_id not null;
+  supplement_id         : /dmo/supplement_id;
+  @Semantics.amount.currencyCode : 'zdmo_a_bksuppl_d.currency_code'
+  price                 : /dmo/supplement_price;
+  currency_code         : /dmo/currency_code;
+  local_last_changed_at : timestampl;
+
+}
