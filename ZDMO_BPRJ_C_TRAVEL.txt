@@ -1,0 +1,31 @@
+projection;
+
+define behavior for zdmo_C_Travel_A_D alias Travel
+use etag
+{
+  use create;
+  use update;
+  use delete;
+
+
+  use association _Booking { create; }
+}
+
+define behavior for zdmo_C_Booking_A_D alias Booking
+use etag
+{
+  use update;
+  use delete;
+
+  use association _BookingSupplement { create; }
+  use association _Travel;
+}
+
+define behavior for zdmo_C_BookingSupplement_A_D alias BookingSupplement
+use etag
+{
+  use update;
+  use delete;
+
+  use association _Travel;
+}
