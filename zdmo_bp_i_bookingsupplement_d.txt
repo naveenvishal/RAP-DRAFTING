@@ -1,0 +1,89 @@
+CLASS lhc_bookingsupplement DEFINITION INHERITING FROM cl_abap_behavior_handler.
+
+  PRIVATE SECTION.
+
+    METHODS setBookSupplNumber FOR DETERMINE ON SAVE
+      IMPORTING keys FOR BookingSupplement~setBookSupplNumber.
+
+ENDCLASS.
+
+CLASS lhc_bookingsupplement IMPLEMENTATION.
+
+  METHOD setBookSupplNumber.
+
+
+    DATA max_bookingsupid TYPE /dmo/booking_supplement_id.
+    DATA lt_bookingsup_update TYPE TABLE FOR UPDATE zdmo_I_Travel_D\\BookingSupplement.
+    "Read all travels for the requested bookings
+    " If multiple bookings of the same travel are requested, the travel is returned only once.
+
+    READ ENTITIES OF zdmo_I_Travel_D IN LOCAL MODE
+    ENTITY BookingSupplement BY \_Travel
+    FIELDS ( TravelUUID )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_travel).
+
+    " Process all affected travels. Read respective bookings for one travel
+    LOOP AT lt_travel INTO DATA(ls_travel).
+
+      READ ENTITIES OF zdmo_i_travel_d IN LOCAL MODE
+      ENTITY Travel BY \_Booking
+      FIELDS ( BookingUUID )
+      WITH VALUE #( ( %tky = ls_travel-%tky ) )
+      RESULT DATA(lt_booking).
+
+      LOOP AT lt_booking ASSIGNING FIELD-SYMBOL(<lfs_booking_new>).
+
+        READ ENTITIES OF zdmo_i_travel_d IN LOCAL MODE
+             ENTITY Booking BY \_BookingSupplement
+             FIELDS ( BookingSupplementID )
+             WITH VALUE #( ( %tky = <lfs_booking_new>-%tky ) )
+             RESULT DATA(lt_bookingSpplement).
+
+        max_bookingsupid = '0000'.
+
+        LOOP AT lt_bookingspplement ASSIGNING FIELD-SYMBOL(<lfs_bksup_line>).
+          IF <lfs_bksup_line>-BookingSupplementID > max_bookingsupid.
+            max_bookingsupid = <lfs_bksup_line>-BookingSupplementID.
+          ENDIF.
+        ENDLOOP.
+
+        LOOP AT lt_bookingspplement ASSIGNING <lfs_bksup_line>
+                                WHERE BookingSupplementID IS INITIAL.
+          max_bookingsupid += 1.
+          APPEND VALUE #( %tky = <lfs_bksup_line>-%tky
+                            BookingSupplementID = max_bookingsupid ) TO lt_bookingsup_update.
+        ENDLOOP.
+
+      ENDLOOP.
+    ENDLOOP.
+
+
+
+*    max_bookingid = '0000'.
+*    LOOP AT lt_booking INTO DATA(ls_booking).
+*      IF ls_booking-BookingID > max_bookingid.
+*        max_bookingid = ls_booking-BookingID.
+*      ENDIF.
+*    ENDLOOP.
+
+*    LOOP AT lt_booking INTO ls_booking WHERE BookingID IS INITIAL.
+*      max_bookingid += 1.
+*      APPEND VALUE #( %tky = ls_booking-%tky
+*      BookingID = max_bookingid ) TO lt_booking_update.
+*    ENDLOOP.
+*  ENDLOOP.
+
+  MODIFY ENTITIES OF zdmo_I_travel_d IN LOCAL MODE
+  ENTITY BookingSupplement
+  UPDATE FIELDS ( BookingSupplementID ) WITH lt_bookingsup_update
+  REPORTED DATA(lt_reported).
+  reported = CORRESPONDING #( DEEP lt_reported ).
+
+ENDMETHOD.
+
+ENDCLASS.
+
+*"* use this source file for the definition and implementation of
+*"* local helper classes, interface definitions and type
+*"* declarations

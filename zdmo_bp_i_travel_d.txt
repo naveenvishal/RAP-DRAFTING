@@ -1,0 +1,133 @@
+CLASS lhc_travel DEFINITION INHERITING FROM cl_abap_behavior_handler.
+
+  PRIVATE SECTION.
+
+    METHODS reCalcTotalPrice FOR MODIFY
+      IMPORTING keys FOR ACTION Travel~reCalcTotalPrice.
+    METHODS setTravelNumber FOR DETERMINE ON SAVE
+      IMPORTING keys FOR Travel~setTravelNumber.
+    METHODS setStatusToNew FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR Travel~setStatusToNew.
+    METHODS calculateTotalPrice FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR Travel~calculateTotalPrice.
+
+ENDCLASS.
+
+CLASS lhc_travel IMPLEMENTATION.
+
+  METHOD reCalcTotalPrice.
+    TYPES: BEGIN OF ty_amount_per_currencycode,
+             amount        TYPE /dmo/total_price,
+             currency_code TYPE /dmo/currency_code,
+           END OF ty_amount_per_currencycode.
+    DATA: amount_per_currencycode TYPE STANDARD TABLE OF ty_amount_per_currencycode.
+    " Read all relevant travel instances.
+    READ ENTITIES OF zdmo_I_Travel_D IN LOCAL MODE
+    ENTITY Travel
+    FIELDS ( BookingFee CurrencyCode )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_travel)
+    FAILED failed.
+    DELETE lt_travel WHERE CurrencyCode IS INITIAL.
+    LOOP AT lt_travel ASSIGNING FIELD-SYMBOL(<fs_travel>).
+      " Set the start for the calculation by adding the booking fee.
+      amount_per_currencycode = VALUE #( ( amount = <fs_travel>-BookingFee
+      currency_code = <fs_travel>-CurrencyCode ) ).
+
+      " Read all associated bookings and add them to the total price.
+      READ ENTITIES OF zdmo_I_Travel_D IN LOCAL MODE
+      ENTITY Travel BY \_Booking
+      FIELDS ( FlightPrice CurrencyCode )
+      WITH VALUE #( ( %tky = <fs_travel>-%tky ) )
+      RESULT DATA(lt_booking).
+      LOOP AT lt_booking INTO DATA(booking) WHERE CurrencyCode IS NOT INITIAL.
+        COLLECT VALUE ty_amount_per_currencycode( amount = booking-FlightPrice
+        currency_code = booking-CurrencyCode ) INTO amount_per_currencycode.
+
+      ENDLOOP.
+      " Read all associated booking supplements and add them to the total price.
+      READ ENTITIES OF zdmo_I_Travel_D IN LOCAL MODE
+      ENTITY Booking BY \_BookingSupplement
+      FIELDS ( BookSupplPrice CurrencyCode )
+      WITH VALUE #( FOR rba_booking IN lt_booking ( %tky = rba_booking-%tky ) )
+      RESULT DATA(lt_bookingsupplement).
+      LOOP AT lt_bookingsupplement INTO DATA(bookingsupplement) WHERE CurrencyCode IS NOT INITIAL.
+        COLLECT VALUE ty_amount_per_currencycode( amount = bookingsupplement-BookSupplPrice
+        currency_code = bookingsupplement-CurrencyCode ) INTO amount_per_currencycode.
+      ENDLOOP.
+      CLEAR <fs_travel>-TotalPrice.
+      LOOP AT amount_per_currencycode INTO DATA(single_amount_per_currencycode).
+        " If needed do a Currency Conversion
+        IF single_amount_per_currencycode-currency_code = <fs_travel>-CurrencyCode.
+          <fs_travel>-TotalPrice += single_amount_per_currencycode-amount.
+        ELSE.
+          /dmo/cl_flight_amdp=>convert_currency(
+          EXPORTING
+          iv_amount = single_amount_per_currencycode-amount
+          iv_currency_code_source = single_amount_per_currencycode-currency_code
+          iv_currency_code_target = <fs_travel>-CurrencyCode
+          iv_exchange_rate_date = cl_abap_context_info=>get_system_date( )
+          IMPORTING
+          ev_amount = DATA(total_booking_price_per_curr)
+          ).
+          <fs_travel>-TotalPrice += total_booking_price_per_curr.
+        ENDIF.
+      ENDLOOP.
+    ENDLOOP.
+    " write back the modified total_price of travels
+    MODIFY ENTITIES OF zdmo_I_Travel_D IN LOCAL MODE
+    ENTITY travel
+    UPDATE FIELDS ( TotalPrice )
+    WITH CORRESPONDING #( lt_travel ).
+  ENDMETHOD.
+
+  METHOD setTravelNumber.
+    "Ensure idempotence
+    READ ENTITIES OF zdmo_I_Travel_D IN LOCAL MODE
+    ENTITY Travel
+    FIELDS ( TravelID )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_travel).
+
+    DELETE lt_travel WHERE TravelID IS NOT INITIAL.
+    CHECK lt_travel IS NOT INITIAL.
+    "Get max travelID
+    SELECT SINGLE FROM zdmo_a_travel_d FIELDS MAX( travel_id ) INTO @DATA(lv_max_travelid).
+    "update involved instances
+    MODIFY ENTITIES OF zdmo_I_Travel_D IN LOCAL MODE
+    ENTITY Travel
+    UPDATE FIELDS ( TravelID )
+    WITH VALUE #( FOR ls_travel IN lt_travel INDEX INTO i (
+    %tky = ls_travel-%tky
+    TravelID = lv_max_travelid + i ) )
+    REPORTED DATA(lt_reported).
+    "fill reported
+    reported = CORRESPONDING #( DEEP lt_reported ).
+  ENDMETHOD.
+
+  METHOD setStatusToNew.
+
+    MODIFY ENTITIES OF zdmo_I_Travel_D IN LOCAL MODE
+    ENTITY travel
+    UPDATE SET FIELDS
+    WITH VALUE #( FOR key IN keys ( %tky = key-%tky
+    OverallStatus = 'N' ) )
+    REPORTED DATA(lt_reported).
+
+    reported = CORRESPONDING #( DEEP lt_reported ).
+  ENDMETHOD.
+
+  METHOD calculateTotalPrice.
+    MODIFY ENTITIES OF zdmo_I_Travel_D IN LOCAL MODE
+    ENTITY Travel
+    EXECUTE reCalcTotalPrice
+    FROM CORRESPONDING #( keys )
+    REPORTED DATA(lt_reported).
+    reported = CORRESPONDING #( DEEP lt_reported ).
+  ENDMETHOD.
+
+ENDCLASS.
+
+*"* use this source file for the definition and implementation of
+*"* local helper classes, interface definitions and type
+*"* declarations
