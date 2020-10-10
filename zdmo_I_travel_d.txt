@@ -1,15 +1,13 @@
-@EndUserText.label: '''Travel View Entity for Draft Ref.Scen'
-@AccessControl.authorizationCheck: #CHECK
-define root view entity zdmo_I_travel_d
+@EndUserText.label: 'Travel View Entity for Draft Ref.Scen.'
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+define root view entity zdmo_I_Travel_D
   as select from zdmo_a_travel_d
-  composition [0..*] of zdmo_I_booking_d as _Booking
+  composition [0..*] of zdmo_I_Booking_D as _Booking
   association [0..1] to /DMO/I_Agency    as _Agency   on $projection.AgencyID = _Agency.AgencyID
-
   association [0..1] to /DMO/I_Customer  as _Customer on $projection.CustomerID = _Customer.CustomerID
-
   association [0..1] to I_Currency       as _Currency on $projection.CurrencyCode = _Currency.Currency
-{
-      //zdemo_a_travel_d
+{ ///dmo/a_travel_d
+
   key travel_uuid           as TravelUUID,
       travel_id             as TravelID,
       agency_id             as AgencyID,
@@ -28,11 +26,11 @@ define root view entity zdmo_I_travel_d
       @Semantics.systemDateTime.createdAt: true
       local_created_at      as LocalCreatedAt,
       @Semantics.user.lastChangedBy: true
-      local_last_changed_by as LocalLastChangeBy,
-      @Semantics.systemDateTime.lastChangedAt: true
-      local_last_changed_at as LocalLastChangeAt,
-
-      //Association
+      local_last_changed_by as LocalLastChangedBy,
+      //local ETag field --> OData ETag
+      @Semantics.systemDateTime.localInstanceLastChangedAt: true
+      local_last_changed_at as LocalLastChangedAt,
+      //Associations
       _Booking,
       _Agency,
       _Customer,
