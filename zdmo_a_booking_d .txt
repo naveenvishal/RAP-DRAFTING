@@ -1,4 +1,4 @@
-@EndUserText.label : 'Draft Table for Booking'
+@EndUserText.label : 'Active Booking Persistence for Draft Reference Scenario'
 @AbapCatalog.enhancementCategory : #NOT_EXTENSIBLE
 @AbapCatalog.tableCategory : #TRANSPARENT
 @AbapCatalog.deliveryClass : #A
