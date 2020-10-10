@@ -1,16 +1,15 @@
-@EndUserText.label: 'Composite View for Booking'
-@AccessControl.authorizationCheck: #CHECK
-define view entity zdmo_I_booking_d
+@EndUserText.label: 'Booking View Entity for Draft RefScen'
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+define view entity zdmo_I_Booking_D
   as select from zdmo_a_booking_d
-  association        to parent zdmo_I_travel_d as _Travel     on  $projection.TravelUUID = _Travel.TravelUUID
-  association [1..1] to /DMO/I_Customer        as _Customer   on  $projection.CustomerID = _Customer.CustomerID
-  association [1..1] to /dmo/i_carrier         as _Carrier    on  $projection.AirlineID = _Carrier.AirlineID
-  association [1..1] to /DMO/I_Connection      as _Connection on  $projection.AirlineID    = _Connection.AirlineID
-                                                              and $projection.ConnectionID = _Connection.ConnectionID
-
-{
-      //zdmo_a_booking_d
-  key booking_uuid,
+  association        to parent zdmo_I_Travel_D     as _Travel     on  $projection.TravelUUID = _Travel.TravelUUID
+  composition [0..*] of zdmo_I_BookingSupplement_D as _BookingSupplement
+  association [1..1] to /DMO/I_Customer            as _Customer   on  $projection.CustomerID = _Customer.CustomerID
+  association [1..1] to /DMO/I_Carrier             as _Carrier    on  $projection.AirlineID = _Carrier.AirlineID
+  association [1..1] to /DMO/I_Connection          as _Connection on  $projection.AirlineID    = _Connection.AirlineID
+                                                                  and $projection.ConnectionID = _Connection.ConnectionID
+{ ///dmo/a_booking_d
+  key booking_uuid          as BookingUUID,
       parent_uuid           as TravelUUID,
       booking_id            as BookingID,
       booking_date          as BookingDate,
@@ -22,11 +21,13 @@ define view entity zdmo_I_booking_d
       flight_price          as FlightPrice,
       currency_code         as CurrencyCode,
       booking_status        as BookingStatus,
+      //local ETag field --> OData ETag
       @Semantics.systemDateTime.localInstanceLastChangedAt: true
       local_last_changed_at as LocalLastChangedAt,
-
+      //Associations
       _Travel,
-      _Connection,
+      _BookingSupplement,
       _Customer,
-      _Carrier
+      _Carrier,
+      _Connection
 }
