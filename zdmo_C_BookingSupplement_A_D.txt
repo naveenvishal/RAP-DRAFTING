@@ -1,0 +1,28 @@
+@EndUserText.label: 'BookingSuppl Proj View for Draft RefScen'
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@Metadata.allowExtensions: true
+@Search.searchable: true
+define view entity zdmo_C_BookingSupplement_A_D
+  as projection on zdmo_I_BookingSupplement_D
+{
+  key BookSupplUUID,
+      TravelUUID,
+      BookingUUID,
+      @Search.defaultSearchElement: true
+      BookingSupplementID,
+      @ObjectModel.text.element: ['SupplementDescription']
+      @Consumption.valueHelpDefinition: [ {entity: {name: '/DMO/I_SUPPLEMENT', element: 'SupplementID' } ,
+      additionalBinding: [ { localElement: 'BookSupplPrice', element: 'Price' },
+      { localElement: 'CurrencyCode', element: 'CurrencyCode' }] }]
+      SupplementID,
+      _SupplementText.Description as SupplementDescription : localized,
+      BookSupplPrice,
+      @Consumption.valueHelpDefinition: [{entity: {name: 'I_Currency', element: 'Currency' }}]
+      CurrencyCode,
+      LocalLastChangedAt,
+      /* Associations */
+      _Booking : redirected to parent zdmo_C_Booking_A_D,
+      _Product,
+      _SupplementText,
+      _Travel  : redirected to zdmo_C_Travel_A_D
+}
